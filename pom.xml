@@ -11,8 +11,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <log4j2.version>2.20.0</log4j2.version>
         <dependency-check-maven.version>5.3.2</dependency-check-maven.version>
         <fully.qualified.main.class>com.cottagecoders.criticalupdates.CriticalUpdates</fully.qualified.main.class>
@@ -76,6 +76,11 @@
             <artifactId>jcommander</artifactId>
             <version>1.82</version>
         </dependency>
+            <dependency>
+                <groupId>com.mailjet</groupId>
+                <artifactId>mailjet-client</artifactId>
+                <version>5.2.5</version>
+            </dependency>
     </dependencies>
 
     <build>
