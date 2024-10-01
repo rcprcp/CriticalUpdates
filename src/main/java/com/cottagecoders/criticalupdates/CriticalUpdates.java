@@ -40,6 +40,10 @@ public class CriticalUpdates {
   private static final long section = 4416528482203L;
   private static final Logger LOG = LogManager.getLogger(CriticalUpdates.class);
   private static final String TEMPLATE = """
+          <h2>&#128512; Delete This Section &#128512;</h2>
+          <p>
+          <a href="%s">Zendesk ticket %d</a>
+          </p>
           
           <h2>Summary/Reported Issue</h2>
           <p>
@@ -88,11 +92,8 @@ public class CriticalUpdates {
     LOG.debug("loading user info");
     ZendeskUsers.init(zd);
     ClientOptions options =
-            ClientOptions
-                    .builder()
-                    .apiKey(System.getenv("MJ_APIKEY_PUBLIC"))
-                    .apiSecretKey(System.getenv("MJ_APIKEY_PRIVATE"))
-                    .build();
+            ClientOptions.builder().apiKey(System.getenv("MJ_APIKEY_PUBLIC")).apiSecretKey(System.getenv(
+            "MJ_APIKEY_PRIVATE")).build();
 
     client = new MailjetClient(options);
 
@@ -230,7 +231,13 @@ public class CriticalUpdates {
                                        version);
 
           article.setTitle(title);
-          String body = String.format(TEMPLATE, summaryReportedIssue, version, troubleshootingSteps, stepsToResolve);
+          String body = String.format(TEMPLATE,
+                                      String.format("https://dremio.zendesk.com/agent/tickets/%d", ticket.getId()),
+                                      ticket.getId(),
+                                      summaryReportedIssue,
+                                      version,
+                                      troubleshootingSteps,
+                                      stepsToResolve);
           article.setBody(body);
           article.setDraft(true);
           article.setSectionId(troubleshootingSectionID);
