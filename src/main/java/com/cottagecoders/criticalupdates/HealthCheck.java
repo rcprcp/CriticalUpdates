@@ -7,6 +7,8 @@ public class HealthCheck {
   public long webhookCount;
   public long criticalUpdates;
   public long createKnowledgeBase;
+  public long escalate;
+  public long supportLevel;
   public long totalMemoryMB;
   public long freeMemoryMB;
 
@@ -16,6 +18,8 @@ public class HealthCheck {
     webhookCount = 0;
     criticalUpdates = 0;
     createKnowledgeBase = 0;
+    escalate = 0;
+    supportLevel = 0;
     totalMemoryMB = Runtime.getRuntime().totalMemory() / 1024 / 1024;
     freeMemoryMB = Runtime.getRuntime().freeMemory() / 1024 / 1024;
   }
@@ -31,6 +35,7 @@ public class HealthCheck {
   public long getCriticalUpdates() {
     return criticalUpdates;
   }
+
   public long getCreateKnowledgeBase() {
     return createKnowledgeBase;
   }
@@ -50,5 +55,13 @@ public class HealthCheck {
 
   public void incrementCreateKnowledgeBase() {
     createKnowledgeBase++;
+  }
+
+  public void incrementEscalation() {
+    escalate++;
+  }
+
+  public void incrementSupportLevel() {
+    supportLevel++;
   }
 }
