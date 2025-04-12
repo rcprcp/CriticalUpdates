@@ -30,10 +30,10 @@ public class Escalate {
                   "24-hour " + "period.";
   private static final String NO_ESCALATION_FOR_BRONZE_SUPPORT = NOT_ACCEPTED + "Only Gold Support customers are " +
                                                                          "eligible to use the 'Escalate' button.";
-  private static final String ON_CALL_ENGINEER = "This ticket has been escalated to your TAM (Technical Account " +
-                                                         "Manager).";
-
-  private static final String MESSAGE = "Ticket %d, was escalated via the Escalate button.";
+  private static final String ON_CALL_ENGINEER = "\n\nThis ticket has been escalated to %s, your TAM (Technical " +
+                                                         "Account Manager).\n\n";
+  private static final String IS_IT_URGENT = "If the issue is URGENT, please open a new ticket with URGENT priority " +
+                                                     "to page the on-call engineer.";
 
   Ticket ticket;
   HealthCheck health;
@@ -64,11 +64,8 @@ public class Escalate {
     LOG.info("{} - payload: {}", ticket.getId(), jsonObj.toString());
 
     if (!comment.contains(ESCALATION_REQUEST)) {
-      if (comment.length() < 200) {
-        LOG.info("{} - is not an escalation request \"{}\" ", ticket.getId(), comment);
-      } else {
-        LOG.info("{} - is not an escalation request \"{}\" ", ticket.getId(), comment.substring(0, 199));
-      }
+        LOG.info("{} - is not an escalation request \"{}\" ", ticket.getId(),
+                 comment.substring(0, Integer.min(comment.length(), 100)));
       return;
     }
 
@@ -83,11 +80,11 @@ public class Escalate {
       return;
     }
 
-    // -- support level? only  Gold Support customers can use the Escalate button -- verify this at the org level.
+    // -- support level? only Gold Support customers can use the Escalate button -- verify this at the org level.
     Organization org = zd.getOrganization(ticket.getOrganizationId());
-    if (org.getOrganizationFields().get(ORGANIZATION_SUPPORT_LEVEL) == null || org.getOrganizationFields().get(
-            ORGANIZATION_SUPPORT_LEVEL).equals(BRONZE_SUPPORT) || org.getOrganizationFields().get(
-            ORGANIZATION_SUPPORT_LEVEL).equals(SILVER_SUPPORT)) {
+    if (org.getOrganizationFields().get(ORGANIZATION_SUPPORT_LEVEL) == null
+                || org.getOrganizationFields().get(ORGANIZATION_SUPPORT_LEVEL).equals(BRONZE_SUPPORT)
+                || org.getOrganizationFields().get(ORGANIZATION_SUPPORT_LEVEL).equals(SILVER_SUPPORT)) {
       List<String> t = ticket.getTags();
       t.add(CANNOT_ESCALATE);
       ticket.setTags(t);
@@ -97,7 +94,7 @@ public class Escalate {
       return;
     }
 
-    // get ticket tags - escalation tags.
+    // get ticket tags - check the escalation tags.
     List<String> tags = ticket.getTags();
     for (String tag : tags) {
       // check if the ticket has previous escalations.
@@ -112,7 +109,7 @@ public class Escalate {
       }
     }
 
-    // got here, then it's a new escalation (or anoother escalation more than ESCALATION_INTERVAL later).
+    // got here, then it's a new escalation (or another escalation more than ESCALATION_INTERVAL later).
 
     // delete the previous escalation timestamp tag (not the one for support level)
     List<String> t = ticket.getTags();
@@ -128,9 +125,8 @@ public class Escalate {
     String TAMemail = "hari.sankaralingam@dremio.com";
     String TAMname = "Hari Sankaralingam";
 
-    // initialize sender
-    String senderEmail = "robertcplotts@gmail.com";
-    String senderName = "Bob Plotts";
+    // TODO: FIX this debugging code.
+    String cc = "support-leadership@dremio.com";
 
     // Gather TAM information.  If no TAM, or we fail to lookup the email, send the email to Hari.
     String tmpName = "";
@@ -141,7 +137,7 @@ public class Escalate {
     LOG.info("assigned support (TAM) resource: {}", tmpName);
     if (!StringUtils.isEmpty(tmpName)) {
       String tmpEmail = ZendeskUsers.fetchUser(tmpName).getEmail();
-      LOG.info("got email {} for TAM resource: {}", tmpEmail, tmpName);
+      LOG.info("got email address: {} for TAM resource: {}", tmpEmail, tmpName);
 
       if (!StringUtils.isEmpty(tmpEmail) && tmpEmail.contains("dremio.com")) {
         TAMemail = tmpEmail;
@@ -149,26 +145,29 @@ public class Escalate {
       }
     }
 
-    String emailSubject = String.format("GOLD ACCOUNT ESCALATION: ticket %d from %s was escalated",
+    String emailSubject = String.format("GOLD ACCOUNT ESCALATION: ticket %d from %s",
                                         ticket.getId(),
                                         org.getName());
     LOG.info("email subject: {}", emailSubject);
 
     Long re = ticket.getRequesterId();
     User requester = zd.getUser(re);
-    String emailBody = String.format("In ticket %d, %s added this information and requested escalation:  \n\n\n%s",
+    String emailBody = String.format("In ticket %d, %s from %s added this information and requested escalation:  " +
+                                             "\n\n%s",
                                      ticket.getId(),
                                      requester.getName(),
+                                     org.getName(),
                                      comment);
     LOG.info("email body: {}", emailBody);
 
     // send the email to notify the TAM or Hari, and cc support leadership.
-    SendEmails email = new SendEmails();
-    email.send(TAMemail, TAMname, senderEmail, senderName, emailSubject, emailBody);
-    LOG.info("email sent to {} {} from {} {}", TAMname, TAMemail, senderName, senderEmail);
+    SendGmail sg = new SendGmail();
+    sg.sendGmail(TAMemail, cc, emailSubject, emailBody);
+    LOG.info("email sent to {} {}", TAMname, TAMemail);
 
-    addTicketComment(ticket, ON_CALL_ENGINEER);
-    LOG.info("ticket {} from {} updated with: {}", ticket.getId(), org.getName(), ON_CALL_ENGINEER);
+    String ticketComment = String.format(ON_CALL_ENGINEER + IS_IT_URGENT, TAMname);
+    addTicketComment(ticket, ticketComment);
+    LOG.info("ticket {} from {} updated with: {}", ticket.getId(), org.getName(), comment);
 
   }
 

@@ -108,6 +108,10 @@ public class CriticalUpdates {
     esc.process();
 
     //-----
+    LicenseKey lk = new LicenseKey(ticket, health, zd, jsonObj);
+    lk.process();
+
+    //-----
     // next thing.
 
   }

@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.cloudbees.thirdparty</groupId>
             <artifactId>zendesk-java-client</artifactId>
-            <version>0.22.0</version>
+            <version>1.1.1</version>
         </dependency>
 
         <dependency>
@@ -34,7 +34,20 @@
         <dependency>
             <groupId>io.javalin</groupId>
             <artifactId>javalin</artifactId>
-            <version>5.6.1</version>
+            <version>5.6.5</version>
+        </dependency>
+
+        <!-- Jakarta Mail -->
+        <dependency>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+        <!-- implementation -->
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
+            <version>2.0.2</version>
         </dependency>
 
         <dependency>
@@ -76,11 +89,6 @@
             <artifactId>jcommander</artifactId>
             <version>1.82</version>
         </dependency>
-            <dependency>
-                <groupId>com.mailjet</groupId>
-                <artifactId>mailjet-client</artifactId>
-                <version>5.2.5</version>
-            </dependency>
     </dependencies>
 
     <build>

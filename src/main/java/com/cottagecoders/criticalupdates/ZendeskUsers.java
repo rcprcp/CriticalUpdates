@@ -17,9 +17,6 @@ public class ZendeskUsers {
     int count = 0;
     for (User u : zd.getUsers()) {
       users.put(u.getName(), u);
-      if(u.getName().contains("ob")) {
-        LOG.info("u.getName() '{}' - '{}'", u.getName(), u.getEmail());
-      }
       count++;
     }
     LOG.info("fetched {} user records", count);

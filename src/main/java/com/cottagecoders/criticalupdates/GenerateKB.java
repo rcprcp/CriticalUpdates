@@ -1,12 +1,5 @@
 package com.cottagecoders.criticalupdates;
 
-import com.mailjet.client.ClientOptions;
-import com.mailjet.client.MailjetClient;
-import com.mailjet.client.errors.MailjetException;
-import com.mailjet.client.transactional.SendContact;
-import com.mailjet.client.transactional.SendEmailsRequest;
-import com.mailjet.client.transactional.TransactionalEmail;
-import com.mailjet.client.transactional.response.SendEmailsResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,20 +72,12 @@ public class GenerateKB {
   Ticket ticket = null;
   HealthCheck health = null;
   Zendesk zd = null;
-  private MailjetClient client;
 
   public GenerateKB(Ticket ticket, HealthCheck health, Zendesk zd) {
     this.ticket = ticket;
     this.health = health;
     health.incrementCreateKnowledgeBase();
-
     this.zd = zd;
-
-    ClientOptions options =
-            ClientOptions.builder().apiKey(System.getenv("MJ_APIKEY_PUBLIC")).apiSecretKey(System.getenv(
-            "MJ_APIKEY_PRIVATE")).build();
-    client = new MailjetClient(options);
-
   }
 
   void process() {
@@ -152,7 +137,7 @@ public class GenerateKB {
                                       stepsToResolve);
           article.setBody(body);
 
-          List<Long> contentIds = new ArrayList<>();
+          List<String> contentIds = new ArrayList<>();
           article.setContentTagIds(contentIds);
           article.setAuthorId(ticket.getAssigneeId());
           article.setSectionId(section);
@@ -173,46 +158,23 @@ public class GenerateKB {
           zd.updateTicket(ticket);
 
           String emailTemplate = """
-                  <p>
+                  \n
+                  \n
                   Based on the "Generate a KB" option on support ticket %d, a KB was just created with a title matching this email.
                   Please revise the content in the KB and publish it.  Otherwise, if the KB is not necessary, please delete it.
-                  <p>
+                  \n
+                  
                   Thank you!
-                  <hr>
                   """;
 
           String emailBody = String.format(emailTemplate, ticket.getId());
 
           // send an email to the support engineer.
           User recipient = zd.getUser(ticket.getAssigneeId());
-          TransactionalEmail email = TransactionalEmail.builder().to(new SendContact(recipient.getEmail(),
-                                                                                     recipient.getName())).from(new SendContact(
-                  "robertcplotts@gmail.com",
-                  "bplotts")).subject(String.format("%s", title)).htmlPart(emailBody).build();
+
           LOG.info("{} - created email to {}", ticket.getId(), recipient.getEmail());
-          SendEmailsRequest request = SendEmailsRequest.builder().message(email).build();
-          try {
-            LOG.info("{} - sending email batch", ticket.getId());
-            SendEmailsResponse response = request.sendWith(client);
-
-          } catch (MailjetException ex) {
-            LOG.error("{} Exception: {}", ticket.getId(), ex.getMessage(), ex);
-          }
-
-          TransactionalEmail email2 = TransactionalEmail.builder().to(new SendContact("bob@dremio.com",
-                                                                                      "bob")).from(new SendContact(
-                  "robertcplotts@gmail.com",
-                  "Bob Plotts")).subject(String.format("%s", title)).htmlPart(emailBody).build();
-          LOG.info("{} - created email to {}", ticket.getId(), "bob@dremio.com");
-          request = SendEmailsRequest.builder().message(email2) // you can add up to 50 messages per request
-                            .build();
-          try {
-            LOG.info("{} - sending email batch", ticket.getId());
-            SendEmailsResponse response = request.sendWith(client);
-
-          } catch (MailjetException ex) {
-            LOG.error("{} Exception: {}", ticket.getId(), ex.getMessage(), ex);
-          }
+          SendGmail sg = new SendGmail();
+          sg.sendGmail(recipient.getEmail(), "support-leadership@dremio.com", title, emailBody);
           break;
         }
       }

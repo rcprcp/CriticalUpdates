@@ -8,6 +8,8 @@ public class HealthCheck {
   public long criticalUpdates;
   public long createKnowledgeBase;
   public long escalate;
+  public long licenseKey;
+
   public long supportLevel;
   public long totalMemoryMB;
   public long freeMemoryMB;
@@ -20,6 +22,7 @@ public class HealthCheck {
     createKnowledgeBase = 0;
     escalate = 0;
     supportLevel = 0;
+    licenseKey =0;
     totalMemoryMB = Runtime.getRuntime().totalMemory() / 1024 / 1024;
     freeMemoryMB = Runtime.getRuntime().freeMemory() / 1024 / 1024;
   }
@@ -63,5 +66,9 @@ public class HealthCheck {
 
   public void incrementSupportLevel() {
     supportLevel++;
+  }
+
+  public void incrementLicenseKey() {
+    licenseKey++;
   }
 }
