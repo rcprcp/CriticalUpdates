@@ -29,11 +29,11 @@ public class Notify_24_48_Hours {
 
   void process() {
 
-    // check if this ticket contain the indicator that we've done this ticket before:
     String priority = "";
     int hours = 0;
     List<String> tags = ticket.getTags();
 
+    // check if this ticket contain the indicator that we've done this ticket before:
     if (ticket.getTags().contains(URGENT_24) && !ticket.getTags().contains(URGENT_24_SENT)) {
       tags.add(URGENT_24_SENT);
       priority = "URGENT";
