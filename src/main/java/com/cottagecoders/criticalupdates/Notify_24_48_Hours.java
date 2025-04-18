@@ -96,7 +96,7 @@ public class Notify_24_48_Hours {
       recipients.add(saUser.getEmail());
 
     } else {
-      LOG.error("{} - no {} for {}", ticket.getId(), CriticalUpdates.SOLUTION_ARCHITECT, org.getName());
+      LOG.error("{} - no {} for this org: {}", ticket.getId(), CriticalUpdates.SOLUTION_ARCHITECT, org.getName());
       return;
     }
 
