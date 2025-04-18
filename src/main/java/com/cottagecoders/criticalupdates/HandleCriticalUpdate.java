@@ -31,18 +31,32 @@ public class HandleCriticalUpdate {
         Organization org = zd.getOrganization(ticket.getOrganizationId());
 
         // fetch the solution architect's user id.
-        String sa = org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT).toString();
-        User saUser = ZendeskUsers.fetchUser(sa);
-        ticket.getCollaboratorIds().add(saUser.getId());
+        int update = 0;
+        if(org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT) != null) {
+          String sa = org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT).toString();
+          User saUser = ZendeskUsers.fetchUser(sa);
+          ticket.getCollaboratorIds().add(saUser.getId());
+          update++;
+        }
 
         // fetch the account exec's user id.
-        String ae = org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC).toString();
-        User aeUser = ZendeskUsers.fetchUser(ae);
-        ticket.getCollaboratorIds().add(aeUser.getId());
+        if(org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC) != null) {
+          String ae = org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC).toString();
+          User aeUser = ZendeskUsers.fetchUser(ae);
+          ticket.getCollaboratorIds().add(aeUser.getId());
+          update++;
+        }
 
-        zd.updateTicket(ticket);
+        if(update > 0) {
+          zd.updateTicket(ticket);
+          LOG.info("{} - added new followers to this ticket.", ticket.getId());
 
-        LOG.info("{} - added new followers: {} ({}) {} ({})", ticket.getId(), ae, aeUser.getId(), sa, saUser.getId());
+        } else {
+          LOG.info("{} - no update applied; no {} or {} ",
+                   ticket.getId(),
+                   CriticalUpdates.ACCOUNT_EXEC,
+                   CriticalUpdates.SOLUTION_ARCHITECT);
+        }
 
       } else {  // not a critical ticket.
         // if the ticket's tags include a CRITICAL_UPDATE_TAG - let's delete the tag.
