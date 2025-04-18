@@ -14,6 +14,9 @@ import java.util.Date;
 public class CriticalUpdates {
 
   private static final Logger LOG = LogManager.getLogger(CriticalUpdates.class);
+  static final String ACCOUNT_EXEC =  "sfdc_ae";
+  static final String SOLUTION_ARCHITECT = "sfdc_solution_architect";
+  static final String ORGANIZATION_SUPPORT_LEVEL = "sfdc_support_level";
 
   static HealthCheck health = new HealthCheck();
 
@@ -112,7 +115,8 @@ public class CriticalUpdates {
     lk.process();
 
     //-----
-    // next thing.
+    Notify_24_48_Hours n2448 = new Notify_24_48_Hours(ticket, health, zd, jsonObj);
+    n2448.process();
 
   }
 

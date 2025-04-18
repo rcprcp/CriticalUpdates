@@ -10,7 +10,7 @@ import org.zendesk.client.v2.model.User;
 public class HandleCriticalUpdate {
   private static final Logger LOG = LogManager.getLogger(HandleCriticalUpdate.class);
   private static final String CRITICAL_UPDATE_TAG = "critical_issue_updates";
-
+  private static final  String CRITICAL = "critical";
   Ticket ticket = null;
   Zendesk zd = null;
   HealthCheck health = null;
@@ -19,25 +19,24 @@ public class HandleCriticalUpdate {
     this.ticket = ticket;
     this.zd = zd;
     this.health = health;
-    health.incrementCriticalUpdates();
   }
 
   void process() {
 
     // check if this ticket contain the indicator that we've done this ticket before:
-    if (ticket.getTags().contains("critical")) {
+    if (ticket.getTags().contains(CRITICAL)) {
       if (!ticket.getTags().contains(CRITICAL_UPDATE_TAG)) {
         health.incrementCriticalUpdates();
 
         Organization org = zd.getOrganization(ticket.getOrganizationId());
 
         // fetch the solution architect's user id.
-        String sa = org.getOrganizationFields().get("sfdc_solution_architect").toString();
+        String sa = org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT).toString();
         User saUser = ZendeskUsers.fetchUser(sa);
         ticket.getCollaboratorIds().add(saUser.getId());
 
         // fetch the account exec's user id.
-        String ae = org.getOrganizationFields().get("sfdc_ae").toString();
+        String ae = org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC).toString();
         User aeUser = ZendeskUsers.fetchUser(ae);
         ticket.getCollaboratorIds().add(aeUser.getId());
 

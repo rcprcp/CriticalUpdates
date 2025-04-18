@@ -2,12 +2,15 @@ package com.cottagecoders.criticalupdates;
 
 public class HealthCheck {
 
+  // These have to be declared as public so that the JSON builder can find these variables
+  // to create the JSON payload.
   public long startEpoch;
   public long lastWebhookEpoch;
   public long webhookCount;
   public long criticalUpdates;
   public long createKnowledgeBase;
   public long escalate;
+  public long hours_24_48;
   public long licenseKey;
 
   public long supportLevel;
@@ -23,6 +26,7 @@ public class HealthCheck {
     escalate = 0;
     supportLevel = 0;
     licenseKey =0;
+
     totalMemoryMB = Runtime.getRuntime().totalMemory() / 1024 / 1024;
     freeMemoryMB = Runtime.getRuntime().freeMemory() / 1024 / 1024;
   }
@@ -66,6 +70,10 @@ public class HealthCheck {
 
   public void incrementSupportLevel() {
     supportLevel++;
+  }
+
+  public void incrementHours24_48() {
+    hours_24_48++;
   }
 
   public void incrementLicenseKey() {

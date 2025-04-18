@@ -76,7 +76,6 @@ public class GenerateKB {
   public GenerateKB(Ticket ticket, HealthCheck health, Zendesk zd) {
     this.ticket = ticket;
     this.health = health;
-    health.incrementCreateKnowledgeBase();
     this.zd = zd;
   }
 
@@ -116,6 +115,8 @@ public class GenerateKB {
       Iterable<Comment> comments = zd.getRequestComments(ticket.getId());
       for (Comment c : comments) {
         if (c.getBody().contains("**Summary/Reported Issue**")) {
+          health.incrementCreateKnowledgeBase();
+
           String summaryReportedIssue = kbParse(c.getBody(), "**Summary/Reported Issue**", "**Troubleshooting Steps**");
           String troubleshootingSteps = kbParse(c.getBody(), "**Troubleshooting Steps**", "**Steps to Resolve**");
           String stepsToResolve = kbParse(c.getBody(), "**Steps to Resolve**", "**--**");
@@ -170,11 +171,17 @@ public class GenerateKB {
           String emailBody = String.format(emailTemplate, ticket.getId());
 
           // send an email to the support engineer.
-          User recipient = zd.getUser(ticket.getAssigneeId());
+          User engineer = zd.getUser(ticket.getAssigneeId());
+          List<String> recipients = new ArrayList<>();
+          recipients.add(engineer.getEmail());
 
-          LOG.info("{} - created email to {}", ticket.getId(), recipient.getEmail());
+          // send the email to support leadership, too.
+          List<String> ccs = new ArrayList<>();
+          ccs.add("support-leadership@dremio.com");
+
+          LOG.info("{} - created email to {} with cc to {}", ticket.getId(), recipients, ccs);
           SendGmail sg = new SendGmail();
-          sg.sendGmail(recipient.getEmail(), "support-leadership@dremio.com", title, emailBody);
+          sg.sendGmail(recipients, ccs, title, emailBody);
           break;
         }
       }

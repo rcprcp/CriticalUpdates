@@ -11,12 +11,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.beans.PropertyEditorSupport;
+import java.util.List;
 import java.util.Properties;
 
 public class SendGmail {
   private static final Logger LOG = LogManager.getLogger(SendGmail.class);
 
-  void sendGmail(String recipient, String cc, String subject, String body) {
+  void sendGmail(List<String> recipients, List<String> ccs, String subject, String body) {
     String senderEmail = System.getenv("GMAIL_SENDER_EMAIL");
     String senderAppPassword = System.getenv("GMAIL_SENDER_PASSWORD");
 
@@ -38,14 +40,24 @@ public class SendGmail {
       Message message = new MimeMessage(session);
       message.setFrom(new InternetAddress(senderEmail));
 
-      message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient));
-      if (!StringUtils.isEmpty(cc)) {
-        message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(cc));
+      if(recipients.isEmpty()) {
+        LOG.error("no recipients for email with subject '{}'", subject);
+        return;
       }
+
+      for(String s: recipients) {
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(s));
+      }
+
+      for(String s: ccs) {
+        message.setRecipients(Message.RecipientType.CC, InternetAddress.parse(s));
+      }
+
       message.setSubject(subject);
       message.setText(body);
 
       Transport.send(message);
+      LOG.info("Sent Gmail to {} with CCs {} and Subject {}", recipients, ccs, subject);
 
     } catch (MessagingException ex) {
       LOG.error("Exception: {}", ex.getMessage(), ex);

@@ -11,6 +11,7 @@ import org.zendesk.client.v2.model.Status;
 import org.zendesk.client.v2.model.Ticket;
 import org.zendesk.client.v2.model.User;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Escalate {
@@ -20,20 +21,19 @@ public class Escalate {
   private static final String CANNOT_ESCALATE = "cannot_escalate";
 
   private static final String ESCALATION_TAG = "escalation_";
-  private static final String ORGANIZATION_SUPPORT_LEVEL = "sfdc_support_level";
   private static final String BRONZE_SUPPORT = "bronze_support";
   private static final String SILVER_SUPPORT = "silver_support";
   private static final String ESCALATION_REQUEST = "[**Escalation Request**]";
   private static final String NOT_ACCEPTED = "Escalation not accepted.  ";
   private static final String TOO_SOON =
           NOT_ACCEPTED + "This ticket was escalated %d minutes ago.  Tickets can be " + "escalated only once per " +
-                  "24-hour " + "period.";
+                  "24-hour period.";
   private static final String NO_ESCALATION_FOR_BRONZE_SUPPORT = NOT_ACCEPTED + "Only Gold Support customers are " +
                                                                          "eligible to use the 'Escalate' button.";
   private static final String ON_CALL_ENGINEER = "\n\nThis ticket has been escalated to %s, your TAM (Technical " +
                                                          "Account Manager).\n\n";
-  private static final String IS_IT_URGENT = "If the issue is URGENT, please open a new ticket with URGENT priority " +
-                                                     "to page the on-call engineer.";
+  private static final String IS_IT_URGENT =
+          "If the issue is URGENT, please open a new ticket with URGENT priority to page the on-call engineer.";
 
   Ticket ticket;
   HealthCheck health;
@@ -47,7 +47,6 @@ public class Escalate {
     this.zd = zd;
     this.jsonObj = jsonObj;
     this.comment = jsonObj.getString("comment");
-    health.incrementEscalation();
 
   }
 
@@ -64,8 +63,9 @@ public class Escalate {
     LOG.info("{} - payload: {}", ticket.getId(), jsonObj.toString());
 
     if (!comment.contains(ESCALATION_REQUEST)) {
-        LOG.info("{} - is not an escalation request \"{}\" ", ticket.getId(),
-                 comment.substring(0, Integer.min(comment.length(), 100)));
+      LOG.info("{} - is not an escalation request \"{}\" ",
+               ticket.getId(),
+               comment.substring(0, Integer.min(comment.length(), 100)));
       return;
     }
 
@@ -82,9 +82,9 @@ public class Escalate {
 
     // -- support level? only Gold Support customers can use the Escalate button -- verify this at the org level.
     Organization org = zd.getOrganization(ticket.getOrganizationId());
-    if (org.getOrganizationFields().get(ORGANIZATION_SUPPORT_LEVEL) == null
-                || org.getOrganizationFields().get(ORGANIZATION_SUPPORT_LEVEL).equals(BRONZE_SUPPORT)
-                || org.getOrganizationFields().get(ORGANIZATION_SUPPORT_LEVEL).equals(SILVER_SUPPORT)) {
+    if (org.getOrganizationFields().get(CriticalUpdates.ORGANIZATION_SUPPORT_LEVEL) == null || org.getOrganizationFields().get(
+            CriticalUpdates.ORGANIZATION_SUPPORT_LEVEL).equals(BRONZE_SUPPORT) || org.getOrganizationFields().get(
+            CriticalUpdates.ORGANIZATION_SUPPORT_LEVEL).equals(SILVER_SUPPORT)) {
       List<String> t = ticket.getTags();
       t.add(CANNOT_ESCALATE);
       ticket.setTags(t);
@@ -110,6 +110,7 @@ public class Escalate {
     }
 
     // got here, then it's a new escalation (or another escalation more than ESCALATION_INTERVAL later).
+    health.incrementEscalation();
 
     // delete the previous escalation timestamp tag (not the one for support level)
     List<String> t = ticket.getTags();
@@ -145,9 +146,7 @@ public class Escalate {
       }
     }
 
-    String emailSubject = String.format("GOLD ACCOUNT ESCALATION: ticket %d from %s",
-                                        ticket.getId(),
-                                        org.getName());
+    String emailSubject = String.format("GOLD ACCOUNT ESCALATION: ticket %d from %s", ticket.getId(), org.getName());
     LOG.info("email subject: {}", emailSubject);
 
     Long re = ticket.getRequesterId();
@@ -160,10 +159,17 @@ public class Escalate {
                                      comment);
     LOG.info("email body: {}", emailBody);
 
-    // send the email to notify the TAM or Hari, and cc support leadership.
+    // send the email to notify the TAM or Hari
+    List<String> recipients = new ArrayList<>();
+    recipients.add(TAMemail);
+
+    // set up CCs to include support-leadership
+    List<String> ccs = new ArrayList<>();
+    ccs.add("support-leadership@dremio.com");
+
     SendGmail sg = new SendGmail();
-    sg.sendGmail(TAMemail, cc, emailSubject, emailBody);
-    LOG.info("email sent to {} {}", TAMname, TAMemail);
+    sg.sendGmail(recipients, ccs, emailSubject, emailBody);
+    LOG.info("email sent to {} with cc to {} subject: '{}'", recipients, ccs, emailSubject);
 
     String ticketComment = String.format(ON_CALL_ENGINEER + IS_IT_URGENT, TAMname);
     addTicketComment(ticket, ticketComment);
