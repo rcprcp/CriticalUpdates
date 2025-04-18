@@ -39,10 +39,10 @@ public class Notify_24_48_Hours {
       priority = "URGENT";
       hours = 24;
 
-    } else if (ticket.getTags().contains(URGENT_24) && !ticket.getTags().contains(URGENT_24_SENT)) {
+    } else if (ticket.getTags().contains(HIGH_48) && !ticket.getTags().contains(HIGH_48_SENT)) {
       tags.add(HIGH_48_SENT);
       priority = "HIGH";
-      hours = 24;
+      hours = 48;
 
     } else {
       LOG.info("{} - does not have the required tags. {} ", ticket.getId(), ticket.getTags());
@@ -82,7 +82,8 @@ public class Notify_24_48_Hours {
     if (org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC) != null) {
       String ae = org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC).toString();
       User aeUser = ZendeskUsers.fetchUser(ae);
-      recipients.add(aeUser.getEmail());
+     // recipients.add(aeUser.getEmail());
+      recipients.add("bob.plotts@dremio.com");
 
     } else {
       LOG.error("{} - no {} for {}", ticket.getId(), CriticalUpdates.ACCOUNT_EXEC, org.getName());
@@ -93,7 +94,7 @@ public class Notify_24_48_Hours {
     if (org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT) != null) {
       String sa = org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT).toString();
       User saUser = ZendeskUsers.fetchUser(sa);
-      recipients.add(saUser.getEmail());
+     // recipients.add(saUser.getEmail());
 
     } else {
       LOG.error("{} - no {} for {}", ticket.getId(), CriticalUpdates.SOLUTION_ARCHITECT, org.getName());
@@ -102,6 +103,7 @@ public class Notify_24_48_Hours {
 
     List<String> ccs = new ArrayList<>();
     ccs.add("support-leadership@dremio.com");
+    ccs.add(zd.getUser(ticket.getAssigneeId()).getEmail());
 
     SendGmail sg = new SendGmail();
     sg.sendGmail(recipients, ccs, subject, message);
