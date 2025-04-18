@@ -82,8 +82,7 @@ public class Notify_24_48_Hours {
     if (org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC) != null) {
       String ae = org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC).toString();
       User aeUser = ZendeskUsers.fetchUser(ae);
-     // recipients.add(aeUser.getEmail());
-      recipients.add("bob.plotts@dremio.com");
+      recipients.add(aeUser.getEmail());
 
     } else {
       LOG.error("{} - no {} for {}", ticket.getId(), CriticalUpdates.ACCOUNT_EXEC, org.getName());
@@ -94,7 +93,7 @@ public class Notify_24_48_Hours {
     if (org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT) != null) {
       String sa = org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT).toString();
       User saUser = ZendeskUsers.fetchUser(sa);
-     // recipients.add(saUser.getEmail());
+      recipients.add(saUser.getEmail());
 
     } else {
       LOG.error("{} - no {} for {}", ticket.getId(), CriticalUpdates.SOLUTION_ARCHITECT, org.getName());
