@@ -17,9 +17,9 @@ public class Notify_24_48_Hours {
   private static final String URGENT_24_SENT = "24_hour_urgent_sent";
   private static final String HIGH_48 = "48_hour_urgent";
   private static final String HIGH_48_SENT = "48_hour_urgent_sent";
-  Ticket ticket = null;
-  Zendesk zd = null;
-  HealthCheck health = null;
+  Ticket ticket;
+  Zendesk zd;
+  HealthCheck health;
 
   Notify_24_48_Hours(Ticket ticket, HealthCheck health, Zendesk zd, JSONObject jsonObject) {
     this.ticket = ticket;
@@ -29,8 +29,8 @@ public class Notify_24_48_Hours {
 
   void process() {
 
-    String priority = "";
-    int hours = 0;
+    String priority;
+    int hours;
     List<String> tags = ticket.getTags();
 
     // check if this ticket contain the indicator that we've done this ticket before:
@@ -68,17 +68,19 @@ public class Notify_24_48_Hours {
                                    priority,
                                    hours);
 
-    String message = String.format("\nTicket %d from %s is priority %s and is %d hours old.",
+    String who = String.valueOf(ticket.getStatus()).equals("pending") ? "the customer" : "Dremio support";
+
+    String message = String.format("Ticket %d currently is %s priority and is %d hours old.  The ticket is " +
+                                           "currently waiting for %s.\n\n" + "\n\nThe ticket's subject is:  %s" +
+                                           "\nThe customer's reported issue is: %s",
                                    ticket.getId(),
-                                   org.getName(),
                                    priority,
-                                   hours);
-    message += "\n\nTicket Subject:     " + ticket.getSubject();
-    message += "\n\nReported issue:\n\n" + ticket.getDescription();
+                                   hours,
+                                   who,
+                                   ticket.getSubject(),
+                                   ticket.getDescription());
 
     List<String> recipients = new ArrayList<>();
-
-    // get account exec name.
     if (org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC) != null) {
       String ae = org.getOrganizationFields().get(CriticalUpdates.ACCOUNT_EXEC).toString();
       User aeUser = ZendeskUsers.fetchUser(ae);
@@ -86,10 +88,8 @@ public class Notify_24_48_Hours {
 
     } else {
       LOG.error("{} - no {} for {}", ticket.getId(), CriticalUpdates.ACCOUNT_EXEC, org.getName());
-      return;
     }
 
-    // get solution architect name.
     if (org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT) != null) {
       String sa = org.getOrganizationFields().get(CriticalUpdates.SOLUTION_ARCHITECT).toString();
       User saUser = ZendeskUsers.fetchUser(sa);
@@ -97,14 +97,25 @@ public class Notify_24_48_Hours {
 
     } else {
       LOG.error("{} - no {} for this org: {}", ticket.getId(), CriticalUpdates.SOLUTION_ARCHITECT, org.getName());
-      return;
     }
 
     List<String> ccs = new ArrayList<>();
     ccs.add("support-leadership@dremio.com");
-    ccs.add(zd.getUser(ticket.getAssigneeId()).getEmail());
+    // add support engineer.
+    if (ticket.getAssigneeId() != null && ticket.getAssigneeId() != 0) {
+      ccs.add(zd.getUser(ticket.getAssigneeId()).getEmail());
+    }
 
-    SendGmail sg = new SendGmail();
-    sg.sendGmail(recipients, ccs, subject, message);
+    if (!recipients.isEmpty()) {
+      SendGmail sg = new SendGmail();
+      sg.sendGmail(recipients, ccs, subject, message);
+
+    } else {
+      LOG.info("{} - Organization {} does not have an {} or {} ",
+               ticket.getId(),
+               org.getName(),
+               CriticalUpdates.ACCOUNT_EXEC,
+               CriticalUpdates.SOLUTION_ARCHITECT);
+    }
   }
 }
